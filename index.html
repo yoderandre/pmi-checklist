@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>PMI Checklist App</title>
+  <style>
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body { background-color: #121212; color: #e0e0e0; font-family: -apple-system, system-ui, sans-serif; padding: 12px; margin: 0; }
+    .container { background: #1f2023; border: 1px solid #333; border-radius: 12px; padding: 16px; max-width: 600px; margin: 0 auto; }
+    h2 { font-size: 1.2rem; margin-top: 0; color: #fff; }
+    input[type="text"], input[type="date"], textarea { background: #2b2c30; color: #fff; border: 1px solid #555; border-radius: 8px; padding: 12px; font-size: 1rem; width: 100%; margin-top: 4px; }
+    button { padding: 12px 18px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; font-size: 1rem; }
+    .btn-accent { background: #4caf50; color: #fff; width: 100%; }
+    .btn-ghost { background: transparent; color: #aaa; border: 1px solid #555; }
+    .item-row { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 8px; background: rgba(255,255,255,0.04); margin-bottom: 8px; font-size: 0.95rem; }
+    .item-row input[type="checkbox"] { width: 20px; height: 20px; accent-color: #4caf50; }
+    canvas { background: #2b2c30; border: 1px solid #555; border-radius: 8px; touch-action: none; width: 100%; height: 140px; display: block; }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h2>Preventative Maintenance Inspection Safety Checklist</h2>
+    <p style="color: #a0a5aa; font-size: 0.8rem;">Machine Equipment Safety Audit</p>
+    
+    <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px;">
+      <div>
+        <label style="font-size:0.85rem;">Machine Name / ID</label>
+        <input type="text" id="machineId" value="151-">
+      </div>
+      <div>
+        <label style="font-size:0.85rem;">Date of Inspection</label>
+        <input type="date" id="inspectionDate">
+      </div>
+    </div>
+
+    <div style="margin-bottom: 20px;">
+      <div style="margin-bottom: 12px;">
+        <label style="font-size:0.85rem;">Inspector Printed Name</label>
+        <input type="text" id="inspectorName" placeholder="Type full name...">
+      </div>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+        <label style="font-size:0.85rem;">Inspector Signature (Draw Below)</label>
+        <button type="button" class="btn-ghost" onclick="clearSignature()" style="padding: 4px 10px; font-size: 0.8rem;">Clear</button>
+      </div>
+      <canvas id="sigCanvas"></canvas>
+    </div>
+
+    <h3 style="font-size: 1.05rem; color: #fff;">Inspection Checklist</h3>
+    <div id="checklist">
+      <label class="item-row"><input type="checkbox" class="cb-item" value="Inspect wiring for damage or wear"> Inspect wiring for damage or wear</label>
+      <label class="item-row"><input type="checkbox" class="cb-item" value="Test electrical connections and insulation"> Test electrical connections and insulation</label>
+      <label class="item-row"><input type="checkbox" class="cb-item" value="Verify operation of electrical controls & sensors"> Verify operation of electrical controls & sensors</label>
+      <label class="item-row"><input type="checkbox" class="cb-item" value="Check emergency stop functions"> Check emergency stop functions</label>
+      <label class="item-row"><input type="checkbox" class="cb-item" value="Check for pneumatic leaks"> Check for pneumatic leaks</label>
+      <label class="item-row"><input type="checkbox" class="cb-item" value="Check for Gas Leaks"> Check for Gas Leaks</label>
+      <label class="item-row"><input type="checkbox" class="cb-item" value="Check for Hydraulic leaks"> Check for Hydraulic leaks</label>
+      <label class="item-row"><input type="checkbox" class="cb-item" value="Inspect fluid reservoirs & lines for leaks"> Inspect fluid reservoirs & lines for leaks</label>
+      <label class="item-row"><input type="checkbox" class="cb-item" value="Check air line oil level"> Check air line oil level</label>
+      <label class="item-row"><input type="checkbox" class="cb-item" value="Inspect belts for damage or fraying"> Inspect belts for damage or fraying</label>
+      <label class="item-row"><input type="checkbox" class="cb-item" value="Check for irregular erosion & wear"> Check for irregular erosion & wear</label>
+      <label class="item-row"><input type="checkbox" class="cb-item" value="Check alignment & tension on belts/chains"> Check alignment & tension on belts/chains</label>
+    </div>
+
+    <h3 style="font-size: 1.05rem; color: #fff; margin-top: 20px;">Maintenance &amp; Repairs</h3>
+    <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px;">
+      <div>
+        <label style="font-size:0.85rem;">Maintenance Needed for Future</label>
+        <input type="text" id="maintNeeded">
+      </div>
+      <div>
+        <label style="font-size:0.85rem;">Date of Scheduled Repair</label>
+        <input type="date" id="schedDate">
+      </div>
+      <div>
+        <label style="font-size:0.85rem;">Date Repair Completed</label>
+        <input type="date" id="completedDate">
+      </div>
+    </div>
+
+    <div style="margin-bottom: 20px;">
+      <label style="font-size:0.85rem;">Notes &amp; Remarks</label>
+      <textarea id="notes" style="height:80px;"></textarea>
+    </div>
+
+    <button id="submitBtn" class="btn-accent" onclick="submitInspection()">Submit Inspection</button>
+  </div>
+
+  <script>
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxD2F3EA3EAIeH0tS37HDjh-HMDySClL60nUjGjmLBhiNqicfYSordLQumL2i3VdUpWGA/exec";
+
+    document.getElementById('inspectionDate').value = new Date().toISOString().split('T')[0];
+
+    const canvas = document.getElementById('sigCanvas');
+    const ctx = canvas.getContext('2d');
+    let isDrawing = false, hasSigned = false;
+
+    function resizeCanvas() {
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width;
+      canvas.height = rect.height;
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = 2.5;
+      ctx.lineCap = "round";
+    }
+    window.addEventListener('resize', resizeCanvas);
+    setTimeout(resizeCanvas, 100);
+
+    function getTouchPos(e) {
+      const rect = canvas.getBoundingClientRect();
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      return { x: clientX - rect.left, y: clientY - rect.top };
+    }
+
+    function startDrawing(e) {
+      isDrawing = true; hasSigned = true;
+      const pos = getTouchPos(e);
+      ctx.beginPath(); ctx.moveTo(pos.x, pos.y);
+      if (e.type === 'touchstart') e.preventDefault();
+    }
+
+    function draw(e) {
+      if (!isDrawing) return;
+      if (e.type === 'touchmove') e.preventDefault();
+      const pos = getTouchPos(e);
+      ctx.lineTo(pos.x, pos.y); ctx.stroke();
+    }
+
+    function stopDrawing() { isDrawing = false; }
+
+    canvas.addEventListener('touchstart', startDrawing, { passive: false });
+    canvas.addEventListener('touchmove', draw, { passive: false });
+    canvas.addEventListener('touchend', stopDrawing);
+    canvas.addEventListener('mousedown', startDrawing);
+    canvas.addEventListener('mousemove', draw);
+    canvas.addEventListener('mouseup', stopDrawing);
+
+    function clearSignature() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      hasSigned = false;
+    }
+
+    function submitInspection() {
+      const btn = document.getElementById('submitBtn');
+      btn.disabled = true;
+      btn.textContent = "Uploading...";
+
+      const machineId = document.getElementById('machineId').value.trim() || 'UNKNOWN';
+      const inspectionDate = document.getElementById('inspectionDate').value || 'NO-DATE';
+      const inspectorName = document.getElementById('inspectorName').value.trim() || 'N/A';
+      const maintNeeded = document.getElementById('maintNeeded').value || 'N/A';
+      const schedDate = document.getElementById('schedDate').value || 'N/A';
+      const completedDate = document.getElementById('completedDate').value || 'N/A';
+      const notes = document.getElementById('notes').value || 'N/A';
+
+      const sigDataUrl = hasSigned ? canvas.toDataURL('image/png') : '';
+
+      let itemsListHtml = '';
+      document.querySelectorAll('.cb-item').forEach(cb => {
+        const icon = cb.checked ? '&#10004;' : '&#10008;';
+        const iconColor = cb.checked ? '#4caf50' : '#f44336';
+        itemsListHtml += `
+          <div style="display:flex; align-items:center; gap:10px; padding:10px; border-bottom:1px solid #333;">
+            <span style="color:${iconColor}; font-weight:bold; font-size:1.2rem;">${icon}</span>
+            <span>${cb.value}</span>
+          </div>`;
+      });
+
+      const htmlContent = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Completed PMI - ${machineId}-${inspectionDate}</title>
+  <style>
+    body { background: #121212; color: #e0e0e0; font-family: system-ui, sans-serif; padding: 12px; }
+    .container { background: #1f2023; border: 1px solid #7f8489; border-radius: 12px; padding: 16px; max-width: 600px; margin: 0 auto; }
+    .meta-box { margin-bottom: 16px; background: #2b2c30; padding: 12px; border-radius: 8px; }
+    .sig-img { background: #1f2023; border: 1px solid #555; border-radius: 6px; max-width: 100%; height: 80px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Preventative Maintenance Inspection Safety Checklist</h2>
+    <div class="meta-box">
+      <div><strong>Machine Name / ID:</strong> ${machineId}</div>
+      <div><strong>Date of Inspection:</strong> ${inspectionDate}</div>
+    </div>
+    <div class="meta-box">
+      <div><strong>Inspector Printed Name:</strong> ${inspectorName}</div>
+      <div><strong>Inspector Signature:</strong></div>
+      ${sigDataUrl ? `<img src="${sigDataUrl}" class="sig-img" alt="Signature">` : '<i>No signature</i>'}
+    </div>
+    <h3>Inspection Checklist</h3>
+    <div>${itemsListHtml}</div>
+    <h3>Maintenance & Repairs</h3>
+    <div class="meta-box">
+      <div><strong>Maintenance Needed:</strong> ${maintNeeded}</div>
+      <div><strong>Scheduled Repair:</strong> ${schedDate}</div>
+      <div><strong>Repair Completed:</strong> ${completedDate}</div>
+    </div>
+    <h3>Notes & Remarks</h3>
+    <div style="background:#2b2c30; padding:12px; border-radius:8px;">${notes}</div>
+  </div>
+</body>
+</html>`;
+
+      const payload = {
+        machineId: machineId,
+        inspectionDate: inspectionDate,
+        inspectorName: inspectorName,
+        maintNeeded: maintNeeded,
+        schedDate: schedDate,
+        completedDate: completedDate,
+        notes: notes,
+        htmlContent: htmlContent
+      };
+
+      fetch(SCRIPT_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      })
+      .then(() => {
+        alert(`Inspection for ${machineId} submitted successfully to Google Drive!`);
+        btn.disabled = false;
+        btn.textContent = "Submit Inspection";
+        clearSignature();
+      })
+      .catch(err => {
+        alert("Error submitting form: " + err);
+        btn.disabled = false;
+        btn.textContent = "Submit Inspection";
+      });
+    }
+  </script>
+</body>
+</html>
