@@ -3,12 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>PMI Checklist App</title>
+  <title>TH mfg - PMI Checklist App</title>
   <style>
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     body { background-color: #121212; color: #e0e0e0; font-family: -apple-system, system-ui, sans-serif; padding: 12px; margin: 0; }
     .container { background: #1f2023; border: 1px solid #333; border-radius: 12px; padding: 16px; max-width: 600px; margin: 0 auto; }
-    h2 { font-size: 1.2rem; margin-top: 0; color: #fff; }
+    
+    /* Logo Header Styling */
+    .logo-header { display: flex; flex-direction: column; align-items: center; justify-content: center; margin-bottom: 16px; padding-bottom: 14px; border-bottom: 1px solid #333; text-align: center; }
+    .logo-badge { background: #ffffff; padding: 10px 14px 8px 14px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.4); }
+    
+    h2 { font-size: 1.2rem; margin: 0 0 4px 0; color: #fff; }
     input[type="text"], input[type="password"], input[type="date"], textarea { background: #2b2c30; color: #fff; border: 1px solid #555; border-radius: 8px; padding: 12px; font-size: 1rem; width: 100%; margin-top: 4px; }
     button { padding: 12px 18px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; font-size: 1rem; }
     .btn-accent { background: #4caf50; color: #fff; width: 100%; }
@@ -37,8 +42,21 @@
 <body>
 
   <div class="container">
-    <h2>Preventative Maintenance Inspection Safety Checklist</h2>
-    <p style="color: #a0a5aa; font-size: 0.8rem;">Machine Equipment Safety Audit</p>
+    <!-- Company Logo Header -->
+    <div class="logo-header">
+      <div class="logo-badge">
+        <svg width="74" height="100" viewBox="0 0 220 295" xmlns="http://www.w3.org/2000/svg" aria-label="TH mfg Logo">
+          <rect x="10" y="10" width="200" height="225" rx="46" fill="#000000"/>
+          <circle cx="54" cy="54" r="16" fill="#ffffff"/>
+          <line x1="10" y1="176" x2="210" y2="176" stroke="#ffffff" stroke-width="2.5"/>
+          <circle cx="52" cy="176" r="7.5" fill="#ffffff"/>
+          <text x="108" y="196" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-weight="800" font-size="76" letter-spacing="-2">TH</text>
+          <text x="110" y="276" fill="#000000" font-family="Arial, Helvetica, sans-serif" font-weight="600" font-size="40" text-anchor="middle" letter-spacing="22">mfg</text>
+        </svg>
+      </div>
+      <h2>Preventative Maintenance Inspection Safety Checklist</h2>
+      <p style="color: #a0a5aa; font-size: 0.8rem; margin: 0;">Machine Equipment Safety Audit</p>
+    </div>
     
     <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px;">
       <div>
@@ -347,7 +365,7 @@
         `;
       }
 
-      // Uses {{VERIFIED_INSPECTOR}} placeholder which Apps Script swaps with the sheet's official name
+      // Includes the TH mfg SVG logo at the top of the generated PDF report as well
       const htmlContent = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -356,7 +374,8 @@
   <style>
     body { background: #ffffff; color: #111111; font-family: Arial, sans-serif; padding: 16px; font-size: 13px; }
     .container { border: 1px solid #cccccc; border-radius: 8px; padding: 20px; max-width: 650px; margin: 0 auto; }
-    h2 { margin-top: 0; color: #000; border-bottom: 2px solid #333; padding-bottom: 8px; font-size: 18px; }
+    .pdf-header { display: flex; align-items: center; gap: 16px; border-bottom: 2px solid #333; padding-bottom: 12px; margin-bottom: 14px; }
+    h2 { margin: 0; color: #000; font-size: 18px; }
     h3 { margin-top: 18px; margin-bottom: 8px; color: #222; border-bottom: 1px solid #ddd; padding-bottom: 4px; font-size: 15px; }
     .meta-box { margin-bottom: 14px; background: #f7f7f7; border: 1px solid #e0e0e0; padding: 10px 14px; border-radius: 6px; line-height: 1.6; }
     .sig-img { background: #ffffff; border: 1px solid #ccc; border-radius: 4px; max-width: 280px; height: 75px; margin-top: 6px; display: block; }
@@ -364,7 +383,20 @@
 </head>
 <body>
   <div class="container">
-    <h2>Preventative Maintenance Inspection Safety Checklist</h2>
+    <div class="pdf-header">
+      <svg width="54" height="72" viewBox="0 0 220 295" xmlns="http://www.w3.org/2000/svg">
+        <rect x="10" y="10" width="200" height="225" rx="46" fill="#000000"/>
+        <circle cx="54" cy="54" r="16" fill="#ffffff"/>
+        <line x1="10" y1="176" x2="210" y2="176" stroke="#ffffff" stroke-width="2.5"/>
+        <circle cx="52" cy="176" r="7.5" fill="#ffffff"/>
+        <text x="108" y="196" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-weight="800" font-size="76" letter-spacing="-2">TH</text>
+        <text x="110" y="276" fill="#000000" font-family="Arial, Helvetica, sans-serif" font-weight="600" font-size="40" text-anchor="middle" letter-spacing="22">mfg</text>
+      </svg>
+      <div>
+        <h2>Preventative Maintenance Inspection Safety Checklist</h2>
+        <div style="color: #555; font-size: 12px; margin-top: 4px;">Machine Equipment Safety Audit</div>
+      </div>
+    </div>
     <div class="meta-box">
       <div><strong>Machine Name / ID:</strong> ${machineId}</div>
       <div><strong>Date of Inspection:</strong> ${inspectionDate}</div>
