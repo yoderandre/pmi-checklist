@@ -9,7 +9,7 @@
     body { background-color: #121212; color: #e0e0e0; font-family: -apple-system, system-ui, sans-serif; padding: 12px; margin: 0; }
     .container { background: #1f2023; border: 1px solid #333; border-radius: 12px; padding: 16px; max-width: 600px; margin: 0 auto; }
     h2 { font-size: 1.2rem; margin-top: 0; color: #fff; }
-    input[type="text"], input[type="date"], textarea { background: #2b2c30; color: #fff; border: 1px solid #555; border-radius: 8px; padding: 12px; font-size: 1rem; width: 100%; margin-top: 4px; }
+    input[type="text"], input[type="password"], input[type="date"], textarea { background: #2b2c30; color: #fff; border: 1px solid #555; border-radius: 8px; padding: 12px; font-size: 1rem; width: 100%; margin-top: 4px; }
     button { padding: 12px 18px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; font-size: 1rem; }
     .btn-accent { background: #4caf50; color: #fff; width: 100%; }
     .btn-accent:disabled { background: #2e5e31; color: #aaa; cursor: not-allowed; }
@@ -26,7 +26,6 @@
     .status-badge.na { background: #2b2c30; color: #888; border-color: #555; }
 
     /* Photo Upload & Thumbnail Grid */
-    .photo-upload-box { background: #2b2c30; border: 1px dashed #666; border-radius: 8px; padding: 14px; text-align: center; margin-top: 6px; cursor: pointer; display: block; color: #ccc; font-size: 0.9rem; }
     .photo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; margin-top: 12px; }
     .photo-thumb { position: relative; border-radius: 8px; overflow: hidden; border: 1px solid #555; background: #121212; aspect-ratio: 1 / 1; }
     .photo-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -54,8 +53,8 @@
 
     <div style="margin-bottom: 20px;">
       <div style="margin-bottom: 12px;">
-        <label style="font-size:0.85rem;">Inspector Printed Name *</label>
-        <input type="text" id="inspectorName" placeholder="Type full name...">
+        <label style="font-size:0.85rem;">Technician PIN *</label>
+        <input type="password" id="accessPin" inputmode="numeric" placeholder="Enter your assigned PIN...">
       </div>
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
         <label style="font-size:0.85rem;">Inspector Signature (Draw Below) *</label>
@@ -166,7 +165,7 @@
     document.getElementById('inspectionDate').value = new Date().toISOString().split('T')[0];
 
     // Multiple Photo Compression & Preview Logic
-    let attachedPhotos = []; // Array of compressed JPEG Data URLs
+    let attachedPhotos = [];
 
     document.getElementById('photoInput').addEventListener('change', async function(e) {
       const files = Array.from(e.target.files);
@@ -181,7 +180,6 @@
         }
       }
 
-      // Reset file input so the same photo or additional camera captures can be added repeatedly
       e.target.value = "";
       renderPhotoGrid();
     });
@@ -236,7 +234,7 @@
     let isDrawing = false, hasSigned = false;
 
     function initCanvas() {
-      ctx.strokeStyle = "#ff4d4d"; // Red signature ink
+      ctx.strokeStyle = "#ff4d4d";
       ctx.lineWidth = 3;
       ctx.lineCap = "round";
       ctx.lineJoin = "round";
@@ -284,24 +282,24 @@
       hasSigned = false;
     }
 
-    function submitInspection() {
-      const inspectorNameInput = document.getElementById('inspectorName');
-      const inspectorName = inspectorNameInput.value.trim();
+    async function submitInspection() {
+      const pinInput = document.getElementById('accessPin');
+      const accessPin = pinInput.value.trim();
 
-      if (!inspectorName) {
-        alert("Please enter the Inspector Printed Name before submitting.");
-        inspectorNameInput.focus();
+      if (!accessPin) {
+        alert("Please enter your Technician PIN before submitting.");
+        pinInput.focus();
         return;
       }
 
       if (!hasSigned) {
-        alert("Please provide the Inspector Signature before submitting.");
+        alert("Please provide your Signature before submitting.");
         return;
       }
 
       const btn = document.getElementById('submitBtn');
       btn.disabled = true;
-      btn.textContent = "Uploading PDF & Photos...";
+      btn.textContent = "Verifying PIN & Uploading...";
 
       const machineId = document.getElementById('machineId').value.trim() || 'UNKNOWN';
       const inspectionDate = document.getElementById('inspectionDate').value || 'NO-DATE';
@@ -312,7 +310,6 @@
 
       const sigDataUrl = canvas.toDataURL('image/png');
 
-      // Print-friendly checklist rows for PDF output
       let itemsListHtml = '';
       checklistItems.forEach((itemText, i) => {
         const state = itemStates[i] || 'unchecked';
@@ -335,7 +332,6 @@
           </div>`;
       });
 
-      // Build photo gallery section for PDF if photos were attached
       let photosSectionHtml = '';
       if (attachedPhotos.length > 0) {
         const photoTags = attachedPhotos.map((url, idx) => `
@@ -351,7 +347,7 @@
         `;
       }
 
-      // Clean white print-friendly HTML template for Google Apps Script PDF conversion
+      // Uses {{VERIFIED_INSPECTOR}} placeholder which Apps Script swaps with the sheet's official name
       const htmlContent = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -374,7 +370,7 @@
       <div><strong>Date of Inspection:</strong> ${inspectionDate}</div>
     </div>
     <div class="meta-box">
-      <div><strong>Inspector Printed Name:</strong> ${inspectorName}</div>
+      <div><strong>Verified Inspector:</strong> {{VERIFIED_INSPECTOR}}</div>
       <div><strong>Inspector Signature:</strong></div>
       <img src="${sigDataUrl}" class="sig-img" alt="Signature">
     </div>
@@ -394,9 +390,9 @@
 </html>`;
 
       const payload = {
+        accessPin: accessPin,
         machineId: machineId,
         inspectionDate: inspectionDate,
-        inspectorName: inspectorName,
         maintNeeded: maintNeeded,
         schedDate: schedDate,
         completedDate: completedDate,
@@ -404,25 +400,34 @@
         htmlContent: htmlContent
       };
 
-      fetch(SCRIPT_URL, {
-        method: "POST",
-        mode: "no-cors",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      })
-      .then(() => {
-        alert(`Inspection for ${machineId} submitted successfully!`);
+      try {
+        const response = await fetch(SCRIPT_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify(payload)
+        });
+
+        const result = await response.json();
+
+        if (result.status === "unauthorized") {
+          alert("Access Denied: Invalid Technician PIN. Please check your PIN and try again.");
+          pinInput.value = "";
+          pinInput.focus();
+        } else if (result.status === "success") {
+          alert(`Success! Inspection for ${machineId} logged by ${result.inspector}.`);
+          pinInput.value = "";
+          clearSignature();
+          attachedPhotos = [];
+          renderPhotoGrid();
+        } else {
+          alert("Error saving report: " + (result.message || "Unknown server error"));
+        }
+      } catch (err) {
+        alert("Network error submitting form: " + err);
+      } finally {
         btn.disabled = false;
         btn.textContent = "Submit Inspection";
-        clearSignature();
-        attachedPhotos = [];
-        renderPhotoGrid();
-      })
-      .catch(err => {
-        alert("Error submitting form: " + err);
-        btn.disabled = false;
-        btn.textContent = "Submit Inspection";
-      });
+      }
     }
   </script>
 </body>
