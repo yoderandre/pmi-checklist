@@ -237,17 +237,18 @@
             <div>${iconHtml}</div>
           </div>`;
       });
-
-      const htmlContent = `<!DOCTYPE html>
+const htmlContent = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <title>Completed PMI - ${machineId}-${inspectionDate}</title>
   <style>
-    body { background: #121212; color: #e0e0e0; font-family: system-ui, sans-serif; padding: 12px; }
-    .container { background: #1f2023; border: 1px solid #7f8489; border-radius: 12px; padding: 16px; max-width: 600px; margin: 0 auto; }
-    .meta-box { margin-bottom: 16px; background: #2b2c30; padding: 12px; border-radius: 8px; }
-    .sig-img { background: #1f2023; border: 1px solid #555; border-radius: 6px; max-width: 100%; height: 80px; }
+    body { background: #ffffff; color: #111111; font-family: Arial, sans-serif; padding: 20px; font-size: 13px; }
+    .container { border: 1px solid #cccccc; border-radius: 8px; padding: 20px; max-width: 650px; margin: 0 auto; }
+    h2 { margin-top: 0; color: #000; border-bottom: 2px solid #333; padding-bottom: 8px; }
+    h3 { margin-top: 18px; margin-bottom: 8px; color: #222; border-bottom: 1px solid #ddd; padding-bottom: 4px; }
+    .meta-box { margin-bottom: 14px; background: #f7f7f7; border: 1px solid #e0e0e0; padding: 10px 14px; border-radius: 6px; line-height: 1.6; }
+    .sig-img { background: #ffffff; border: 1px solid #ccc; border-radius: 4px; max-width: 280px; height: 75px; margin-top: 6px; display: block; }
   </style>
 </head>
 <body>
@@ -260,21 +261,22 @@
     <div class="meta-box">
       <div><strong>Inspector Printed Name:</strong> ${inspectorName}</div>
       <div><strong>Inspector Signature:</strong></div>
-      ${sigDataUrl ? `<img src="${sigDataUrl}" class="sig-img" alt="Signature">` : '<i>No signature</i>'}
+      <img src="${sigDataUrl}" class="sig-img" alt="Signature">
     </div>
     <h3>Inspection Checklist</h3>
     <div>${itemsListHtml}</div>
-    <h3>Maintenance & Repairs</h3>
+    <h3>Maintenance &amp; Repairs</h3>
     <div class="meta-box">
       <div><strong>Maintenance Needed:</strong> ${maintNeeded}</div>
       <div><strong>Scheduled Repair:</strong> ${schedDate}</div>
       <div><strong>Repair Completed:</strong> ${completedDate}</div>
     </div>
-    <h3>Notes & Remarks</h3>
-    <div style="background:#2b2c30; padding:12px; border-radius:8px;">${notes}</div>
+    <h3>Notes &amp; Remarks</h3>
+    <div class="meta-box">${notes}</div>
   </div>
 </body>
 </html>`;
+
 
       const payload = {
         machineId: machineId,
