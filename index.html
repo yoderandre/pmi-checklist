@@ -91,15 +91,15 @@
     </div>
 
     <!-- Multiple Photo Upload Section -->
-    <div style="margin-bottom: 22px;">
-      <div style="display: flex; justify-content: space-between; align-items: center;">
-        <label style="font-size:0.85rem;">Inspection Photos (Optional)</label>
-        <span id="photoCount" style="font-size:0.75rem; color:#888;">0 attached</span>
+    <div style="margin-bottom: 22px; background: #2b2c30; border: 1px solid #555; border-radius: 8px; padding: 12px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <label style="font-size:0.9rem; font-weight:600; color:#fff;">Inspection Photos (Optional)</label>
+        <span id="photoCount" style="font-size:0.8rem; color:#4caf50;">0 attached</span>
       </div>
-      <label class="photo-upload-box" for="photoInput">
-        + Tap to Take Photos or Select from Library
-      </label>
-      <input type="file" id="photoInput" accept="image/*" multiple style="display:none;">
+      <button type="button" class="btn-ghost" onclick="document.getElementById('photoInput').click()" style="width: 100%; border-style: dashed; color: #fff; background: rgba(255,255,255,0.05);">
+        📷 Add / Take Photos
+      </button>
+      <input type="file" id="photoInput" accept="image/*" multiple style="position: absolute; left: -9999px;">
       <div id="photoGrid" class="photo-grid"></div>
     </div>
 
