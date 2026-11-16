@@ -30,4 +30,400 @@
     .photo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; margin-top: 12px; }
     .photo-thumb { position: relative; border-radius: 8px; overflow: hidden; border: 1px solid #555; background: #121212; aspect-ratio: 1 / 1; }
     .photo-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
-    .remove-photo-btn { position: absolute; top: 4px; right: 4px; background: rgba(220, 38, 38, 0.9); color: #fff; border: none; border-radius: 50%; width: 24px; height: 24px; font-size: 14px; line-height: 1; padding: 0; display: flex; align-items: center; justify-content: center; cursor
+    .remove-photo-btn { position: absolute; top: 4px; right: 4px; background: rgba(220, 38, 38, 0.9); color: #fff; border: none; border-radius: 50%; width: 24px; height: 24px; font-size: 14px; line-height: 1; padding: 0; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+
+    canvas { background: #2b2c30; border: 1px solid #555; border-radius: 8px; touch-action: none; width: 100%; height: 140px; display: block; }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h2>Preventative Maintenance Inspection Safety Checklist</h2>
+    <p style="color: #a0a5aa; font-size: 0.8rem;">Machine Equipment Safety Audit</p>
+    
+    <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px;">
+      <div>
+        <label style="font-size:0.85rem;">Machine Name / ID</label>
+        <input type="text" id="machineId" value="151-">
+      </div>
+      <div>
+        <label style="font-size:0.85rem;">Date of Inspection</label>
+        <input type="date" id="inspectionDate">
+      </div>
+    </div>
+
+    <div style="margin-bottom: 20px;">
+      <div style="margin-bottom: 12px;">
+        <label style="font-size:0.85rem;">Inspector Printed Name *</label>
+        <input type="text" id="inspectorName" placeholder="Type full name...">
+      </div>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+        <label style="font-size:0.85rem;">Inspector Signature (Draw Below) *</label>
+        <button type="button" class="btn-ghost" onclick="clearSignature()" style="padding: 4px 10px; font-size: 0.8rem;">Clear</button>
+      </div>
+      <canvas id="sigCanvas" width="500" height="150"></canvas>
+    </div>
+
+    <h3 style="font-size: 1.05rem; color: #fff;">Inspection Checklist</h3>
+    <p style="color: #888; font-size: 0.75rem; margin-top: -8px; margin-bottom: 12px;">Tap item state badge to toggle: <b>Pending ➔ ✔ Done ➔ N/A</b></p>
+
+    <div id="checklist"></div>
+
+    <h3 style="font-size: 1.05rem; color: #fff; margin-top: 20px;">Maintenance &amp; Repairs</h3>
+    <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px;">
+      <div>
+        <label style="font-size:0.85rem;">Maintenance Needed for Future</label>
+        <input type="text" id="maintNeeded">
+      </div>
+      <div>
+        <label style="font-size:0.85rem;">Date of Scheduled Repair</label>
+        <input type="date" id="schedDate">
+      </div>
+      <div>
+        <label style="font-size:0.85rem;">Date Repair Completed</label>
+        <input type="date" id="completedDate">
+      </div>
+    </div>
+
+    <div style="margin-bottom: 16px;">
+      <label style="font-size:0.85rem;">Notes &amp; Remarks</label>
+      <textarea id="notes" style="height:80px;"></textarea>
+    </div>
+
+    <!-- Multiple Photo Upload Section -->
+    <div style="margin-bottom: 22px;">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <label style="font-size:0.85rem;">Inspection Photos (Optional)</label>
+        <span id="photoCount" style="font-size:0.75rem; color:#888;">0 attached</span>
+      </div>
+      <label class="photo-upload-box" for="photoInput">
+        + Tap to Take Photos or Select from Library
+      </label>
+      <input type="file" id="photoInput" accept="image/*" multiple style="display:none;">
+      <div id="photoGrid" class="photo-grid"></div>
+    </div>
+
+    <button id="submitBtn" class="btn-accent" onclick="submitInspection()">Submit Inspection</button>
+  </div>
+
+  <script>
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxD2F3EA3EAIeH0tS37HDjh-HMDySClL60nUjGjmLBhiNqicfYSordLQumL2i3VdUpWGA/exec";
+
+    const checklistItems = [
+      "Inspect wiring for damage or wear",
+      "Test electrical connections and insulation",
+      "Verify operation of electrical controls & sensors",
+      "Check emergency stop functions",
+      "Check Emergency Lighting.",
+      "Check for pneumatic leaks",
+      "Check for Gas Leaks",
+      "Check for Hydraulic leaks",
+      "Inspect fluid reservoirs & lines for leaks",
+      "Check air line oil level",
+      "Inspect belts for damage or fraying",
+      "Check for irregular erosion & wear",
+      "Check alignment & tension on belts/chains"
+    ];
+
+    // Render 3-State Checklist
+    const checklistContainer = document.getElementById('checklist');
+    checklistItems.forEach((item, index) => {
+      const row = document.createElement('div');
+      row.className = 'item-row';
+      row.innerHTML = `
+        <span class="item-label" id="label-${index}">${item}</span>
+        <span class="status-badge unchecked" id="badge-${index}" onclick="toggleState(${index})">Pending</span>
+      `;
+      checklistContainer.appendChild(row);
+    });
+
+    const itemStates = {};
+
+    function toggleState(index) {
+      const currentState = itemStates[index] || 'unchecked';
+      const label = document.getElementById(`label-${index}`);
+      const badge = document.getElementById(`badge-${index}`);
+
+      if (currentState === 'unchecked') {
+        itemStates[index] = 'completed';
+        badge.className = 'status-badge completed';
+        badge.innerText = '✔ Done';
+        label.className = 'item-label';
+      } else if (currentState === 'completed') {
+        itemStates[index] = 'na';
+        badge.className = 'status-badge na';
+        badge.innerText = 'N/A';
+        label.className = 'item-label na-text';
+      } else {
+        itemStates[index] = 'unchecked';
+        badge.className = 'status-badge unchecked';
+        badge.innerText = 'Pending';
+        label.className = 'item-label';
+      }
+    }
+
+    // Default inspection date
+    document.getElementById('inspectionDate').value = new Date().toISOString().split('T')[0];
+
+    // Multiple Photo Compression & Preview Logic
+    let attachedPhotos = []; // Array of compressed JPEG Data URLs
+
+    document.getElementById('photoInput').addEventListener('change', async function(e) {
+      const files = Array.from(e.target.files);
+      if (!files.length) return;
+
+      for (const file of files) {
+        try {
+          const compressedUrl = await compressImage(file, 750, 0.72);
+          attachedPhotos.push(compressedUrl);
+        } catch (err) {
+          console.error("Failed to process image:", err);
+        }
+      }
+
+      // Reset file input so the same photo or additional camera captures can be added repeatedly
+      e.target.value = "";
+      renderPhotoGrid();
+    });
+
+    function compressImage(file, maxWidth, quality) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+          const img = new Image();
+          img.onload = function() {
+            const scale = Math.min(1, maxWidth / img.width);
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = Math.round(img.width * scale);
+            tempCanvas.height = Math.round(img.height * scale);
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCtx.drawImage(img, 0, 0, tempCanvas.width, tempCanvas.height);
+            resolve(tempCanvas.toDataURL('image/jpeg', quality));
+          };
+          img.onerror = reject;
+          img.src = event.target.result;
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function removePhoto(index) {
+      attachedPhotos.splice(index, 1);
+      renderPhotoGrid();
+    }
+
+    function renderPhotoGrid() {
+      const grid = document.getElementById('photoGrid');
+      const countLabel = document.getElementById('photoCount');
+      grid.innerHTML = '';
+      countLabel.textContent = `${attachedPhotos.length} attached`;
+
+      attachedPhotos.forEach((dataUrl, idx) => {
+        const thumb = document.createElement('div');
+        thumb.className = 'photo-thumb';
+        thumb.innerHTML = `
+          <img src="${dataUrl}" alt="Photo ${idx + 1}">
+          <button type="button" class="remove-photo-btn" onclick="removePhoto(${idx})" title="Remove photo">&times;</button>
+        `;
+        grid.appendChild(thumb);
+      });
+    }
+
+    // Canvas Signature Setup
+    const canvas = document.getElementById('sigCanvas');
+    const ctx = canvas.getContext('2d');
+    let isDrawing = false, hasSigned = false;
+
+    function initCanvas() {
+      ctx.strokeStyle = "#ff4d4d"; // Red signature ink
+      ctx.lineWidth = 3;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+    }
+    initCanvas();
+
+    function getTouchPos(e) {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      return {
+        x: (clientX - rect.left) * scaleX,
+        y: (clientY - rect.top) * scaleY
+      };
+    }
+
+    function startDrawing(e) {
+      isDrawing = true; hasSigned = true;
+      const pos = getTouchPos(e);
+      ctx.beginPath(); ctx.moveTo(pos.x, pos.y);
+      if (e.type === 'touchstart') e.preventDefault();
+    }
+
+    function draw(e) {
+      if (!isDrawing) return;
+      if (e.type === 'touchmove') e.preventDefault();
+      const pos = getTouchPos(e);
+      ctx.lineTo(pos.x, pos.y); ctx.stroke();
+    }
+
+    function stopDrawing() { isDrawing = false; }
+
+    canvas.addEventListener('touchstart', startDrawing, { passive: false });
+    canvas.addEventListener('touchmove', draw, { passive: false });
+    canvas.addEventListener('touchend', stopDrawing);
+    canvas.addEventListener('mousedown', startDrawing);
+    canvas.addEventListener('mousemove', draw);
+    canvas.addEventListener('mouseup', stopDrawing);
+
+    function clearSignature() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      initCanvas();
+      hasSigned = false;
+    }
+
+    function submitInspection() {
+      const inspectorNameInput = document.getElementById('inspectorName');
+      const inspectorName = inspectorNameInput.value.trim();
+
+      if (!inspectorName) {
+        alert("Please enter the Inspector Printed Name before submitting.");
+        inspectorNameInput.focus();
+        return;
+      }
+
+      if (!hasSigned) {
+        alert("Please provide the Inspector Signature before submitting.");
+        return;
+      }
+
+      const btn = document.getElementById('submitBtn');
+      btn.disabled = true;
+      btn.textContent = "Uploading PDF & Photos...";
+
+      const machineId = document.getElementById('machineId').value.trim() || 'UNKNOWN';
+      const inspectionDate = document.getElementById('inspectionDate').value || 'NO-DATE';
+      const maintNeeded = document.getElementById('maintNeeded').value || 'N/A';
+      const schedDate = document.getElementById('schedDate').value || 'N/A';
+      const completedDate = document.getElementById('completedDate').value || 'N/A';
+      const notes = document.getElementById('notes').value || 'N/A';
+
+      const sigDataUrl = canvas.toDataURL('image/png');
+
+      // Print-friendly checklist rows for PDF output
+      let itemsListHtml = '';
+      checklistItems.forEach((itemText, i) => {
+        const state = itemStates[i] || 'unchecked';
+        let iconHtml = '';
+        let textStyle = '';
+
+        if (state === 'completed') {
+          iconHtml = '<span style="color:#2e7d32; font-weight:bold; font-size:14px;">&#10004; Done</span>';
+        } else if (state === 'na') {
+          iconHtml = '<span style="color:#666; font-weight:bold; font-size:11px; background:#eee; padding:2px 6px; border-radius:4px;">N/A</span>';
+          textStyle = 'text-decoration: line-through; color: #888;';
+        } else {
+          iconHtml = '<span style="color:#c62828; font-weight:bold; font-size:14px;">&#10008; Pending</span>';
+        }
+
+        itemsListHtml += `
+          <div style="display:flex; align-items:center; justify-content:space-between; padding:8px 4px; border-bottom:1px solid #e0e0e0;">
+            <span style="${textStyle}">${itemText}</span>
+            <div>${iconHtml}</div>
+          </div>`;
+      });
+
+      // Build photo gallery section for PDF if photos were attached
+      let photosSectionHtml = '';
+      if (attachedPhotos.length > 0) {
+        const photoTags = attachedPhotos.map((url, idx) => `
+          <div style="margin-bottom: 12px; page-break-inside: avoid;">
+            <div style="font-size: 11px; color: #555; margin-bottom: 4px;">Photo ${idx + 1}</div>
+            <img src="${url}" style="max-width: 100%; max-height: 360px; border: 1px solid #ccc; border-radius: 4px; display: block;">
+          </div>
+        `).join('');
+
+        photosSectionHtml = `
+          <h3>Inspection Photos (${attachedPhotos.length})</h3>
+          <div class="meta-box">${photoTags}</div>
+        `;
+      }
+
+      // Clean white print-friendly HTML template for Google Apps Script PDF conversion
+      const htmlContent = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Completed PMI - ${machineId}-${inspectionDate}</title>
+  <style>
+    body { background: #ffffff; color: #111111; font-family: Arial, sans-serif; padding: 16px; font-size: 13px; }
+    .container { border: 1px solid #cccccc; border-radius: 8px; padding: 20px; max-width: 650px; margin: 0 auto; }
+    h2 { margin-top: 0; color: #000; border-bottom: 2px solid #333; padding-bottom: 8px; font-size: 18px; }
+    h3 { margin-top: 18px; margin-bottom: 8px; color: #222; border-bottom: 1px solid #ddd; padding-bottom: 4px; font-size: 15px; }
+    .meta-box { margin-bottom: 14px; background: #f7f7f7; border: 1px solid #e0e0e0; padding: 10px 14px; border-radius: 6px; line-height: 1.6; }
+    .sig-img { background: #ffffff; border: 1px solid #ccc; border-radius: 4px; max-width: 280px; height: 75px; margin-top: 6px; display: block; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Preventative Maintenance Inspection Safety Checklist</h2>
+    <div class="meta-box">
+      <div><strong>Machine Name / ID:</strong> ${machineId}</div>
+      <div><strong>Date of Inspection:</strong> ${inspectionDate}</div>
+    </div>
+    <div class="meta-box">
+      <div><strong>Inspector Printed Name:</strong> ${inspectorName}</div>
+      <div><strong>Inspector Signature:</strong></div>
+      <img src="${sigDataUrl}" class="sig-img" alt="Signature">
+    </div>
+    <h3>Inspection Checklist</h3>
+    <div>${itemsListHtml}</div>
+    <h3>Maintenance &amp; Repairs</h3>
+    <div class="meta-box">
+      <div><strong>Maintenance Needed:</strong> ${maintNeeded}</div>
+      <div><strong>Scheduled Repair:</strong> ${schedDate}</div>
+      <div><strong>Repair Completed:</strong> ${completedDate}</div>
+    </div>
+    <h3>Notes &amp; Remarks</h3>
+    <div class="meta-box">${notes}</div>
+    ${photosSectionHtml}
+  </div>
+</body>
+</html>`;
+
+      const payload = {
+        machineId: machineId,
+        inspectionDate: inspectionDate,
+        inspectorName: inspectorName,
+        maintNeeded: maintNeeded,
+        schedDate: schedDate,
+        completedDate: completedDate,
+        notes: notes,
+        htmlContent: htmlContent
+      };
+
+      fetch(SCRIPT_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      })
+      .then(() => {
+        alert(`Inspection for ${machineId} submitted successfully!`);
+        btn.disabled = false;
+        btn.textContent = "Submit Inspection";
+        clearSignature();
+        attachedPhotos = [];
+        renderPhotoGrid();
+      })
+      .catch(err => {
+        alert("Error submitting form: " + err);
+        btn.disabled = false;
+        btn.textContent = "Submit Inspection";
+      });
+    }
+  </script>
+</body>
+</html>
