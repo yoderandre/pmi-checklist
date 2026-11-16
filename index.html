@@ -57,7 +57,7 @@
     </div>
 
     <h3 style="font-size: 1.05rem; color: #fff;">Inspection Checklist</h3>
-    <p style="color: #888; font-size: 0.75rem; margin-top: -8px; margin-bottom: 12px;">Tap item state badge to toggle: <b>Unchecked ➔ Completed ➔ N/A</b></p>
+    <p style="color: #888; font-size: 0.75rem; margin-top: -8px; margin-bottom: 12px;">Tap item state badge to toggle: <b>Pending ➔ ✔ Done ➔ N/A</b></p>
 
     <div id="checklist">
       <!-- Standard items rendered dynamically with 3-state logic -->
@@ -95,6 +95,7 @@
       "Test electrical connections and insulation",
       "Verify operation of electrical controls & sensors",
       "Check emergency stop functions",
+      "Check Emergency Lighting.",
       "Check for pneumatic leaks",
       "Check for Gas Leaks",
       "Check for Hydraulic leaks",
@@ -118,7 +119,7 @@
     });
 
     // Toggle logic: unchecked -> completed -> na -> unchecked
-    const itemStates = {}; // Stores state per index: 'unchecked', 'completed', 'na'
+    const itemStates = {}; 
 
     function toggleState(index) {
       const currentState = itemStates[index] || 'unchecked';
